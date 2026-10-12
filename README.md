@@ -4,6 +4,8 @@
 ![PHP](https://img.shields.io/badge/PHP-8.4%20|%208.5-777bb4)
 ![Laravel](https://img.shields.io/badge/Laravel-13-ff2d20)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-dukung-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/caturseptian)
+[![Trakteer](https://img.shields.io/badge/Trakteer-dukung-c0392b)](https://trakteer.id/caturseptian)
 
 Proyek Laravel ini berisi **kode wilayah administrasi pemerintahan Indonesia** (kodifikasi wilayah).
 Isinya provinsi, kabupaten/kota, kecamatan, kelurahan/desa dan kode pos, lengkap dengan migration,
@@ -172,6 +174,12 @@ php artisan migrate:fresh --seed
 composer test
 ```
 
+## Dukung proyek ini
+
+Repositori ini gratis. Kalau membantu pekerjaanmu, kamu bisa ikut menanggung biaya server dan pembaruan data:
+[Trakteer](https://trakteer.id/caturseptian) · [Saweria](https://saweria.co/forcaturseptian) ·
+[Ko-fi](https://ko-fi.com/caturseptian) · [PayPal](https://paypal.me/ccseptian).
+
 ## English
 
 **Laravel Indonesian Territory** provides the official administrative region codes of Indonesia
@@ -182,6 +190,7 @@ Eloquent models and a read-only JSON REST API. Codes are strings in the official
 `31.71.01.1001`. Install with `composer setup`, then call `GET /api/provinces`.
 The same data, plus coordinates, boundaries, islands and downloads, is available without installation
 at [indonesia-region.caturseptian.site](https://indonesia-region.caturseptian.site) (English docs at `/docs`).
+If it helps your work, you can support it on [Ko-fi](https://ko-fi.com/caturseptian) or [PayPal](https://paypal.me/ccseptian).
 
 ## Lisensi
 
