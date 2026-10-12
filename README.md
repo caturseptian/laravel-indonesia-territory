@@ -178,7 +178,7 @@ composer test
 
 Repositori ini gratis. Kalau membantu pekerjaanmu, kamu bisa ikut menanggung biaya server dan pembaruan data:
 [Trakteer](https://trakteer.id/caturseptian) · [Saweria](https://saweria.co/forcaturseptian) ·
-[Ko-fi](https://ko-fi.com/caturseptian) · [PayPal](https://paypal.me/ccseptian).
+[Ko-fi](https://ko-fi.com/caturseptian) · [Buy Me a Coffee](https://buymeacoffee.com/caturseptian) · [PayPal](https://paypal.me/ccseptian).
 
 ## English
 
@@ -190,7 +190,7 @@ Eloquent models and a read-only JSON REST API. Codes are strings in the official
 `31.71.01.1001`. Install with `composer setup`, then call `GET /api/provinces`.
 The same data, plus coordinates, boundaries, islands and downloads, is available without installation
 at [indonesia-region.caturseptian.site](https://indonesia-region.caturseptian.site) (English docs at `/docs`).
-If it helps your work, you can support it on [Ko-fi](https://ko-fi.com/caturseptian) or [PayPal](https://paypal.me/ccseptian).
+If it helps your work, you can support it on [Ko-fi](https://ko-fi.com/caturseptian), [Buy Me a Coffee](https://buymeacoffee.com/caturseptian) or [PayPal](https://paypal.me/ccseptian).
 
 ## Lisensi
 
