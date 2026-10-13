@@ -22,7 +22,10 @@ class TerritorySeeder extends Seeder
      */
     private const TABLES = ['provinces', 'regencies', 'districts', 'villages', 'islands', 'code_changes'];
 
-    private const CHUNK = 1000;
+    /**
+     * Batas variabel terikat per query di SQLite sebelum 3.32; dipakai untuk menghitung ukuran chunk.
+     */
+    private const MAX_BINDINGS = 999;
 
     private const BOUNDARY_CHUNK = 50;
 
@@ -69,7 +72,7 @@ class TerritorySeeder extends Seeder
     public function seedBoundaries(): void
     {
         $table = config('territory.prefix', 'territory_').'boundaries';
-        $files = glob(rtrim((string) config('territory.boundary_path'), '/').'/*.geojson.gz') ?: [];
+        $files = $this->boundaryFiles();
 
         if ($files === [] && config('territory.boundaries.levels', []) !== [] && $this->hasCommand) {
             $this->command->warn('  Berkas boundary belum ada. Jalankan php artisan territory:boundaries untuk mengunduhnya.');
@@ -101,6 +104,33 @@ class TerritorySeeder extends Seeder
         });
 
         $this->report($table);
+    }
+
+    /**
+     * Berkas boundary yang sesuai level dan provinsi di config. Tanpa level di config, semua berkas dipakai.
+     *
+     * @return list<string>
+     */
+    private function boundaryFiles(): array
+    {
+        $files = glob(rtrim((string) config('territory.boundary_path'), '/').'/*.geojson.gz') ?: [];
+        $levels = config('territory.boundaries.levels', []);
+        $provinces = config('territory.boundaries.provinces', 'all');
+        if ($levels === []) {
+            return $files;
+        }
+
+        $plural = ['province' => 'provinces', 'regency' => 'regencies', 'district' => 'districts', 'village' => 'villages'];
+
+        return array_values(array_filter($files, function (string $file) use ($levels, $plural, $provinces) {
+            if (preg_match('/^(\w+?)(?:-(\d{2}))?\.geojson\.gz$/D', basename($file), $match) !== 1) {
+                return false;
+            }
+            $level = array_search($match[1], $plural, true);
+
+            return in_array($level, $levels, true)
+                && (! isset($match[2]) || $provinces === 'all' || in_array($match[2], (array) $provinces, true));
+        }));
     }
 
     /**
@@ -153,6 +183,7 @@ class TerritorySeeder extends Seeder
             DB::table($table)->delete();
         }
 
+        $chunk = max(1, intdiv(self::MAX_BINDINGS, count(array_intersect($header, array_keys($columns)))));
         $seen = [];
         $rows = [];
         while (($values = fgetcsv($handle, escape: '')) !== false) {
@@ -162,7 +193,7 @@ class TerritorySeeder extends Seeder
                 $seen[$row['code']] = true;
             }
 
-            if (count($rows) === self::CHUNK) {
+            if (count($rows) === $chunk) {
                 $this->write($table, $rows, $keyed);
                 $rows = [];
             }
