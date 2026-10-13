@@ -173,4 +173,21 @@ class SeederTest extends TestCase
 
         $this->assertSame(1, DB::table('territory_boundaries')->count());
     }
+
+    public function test_boundary_hanya_dari_level_dan_provinsi_yang_dikonfigurasi(): void
+    {
+        $this->useFixtureData();
+        File::ensureDirectoryExists($path = $this->workspace.'/boundaries');
+        $collection = fn (string $level, string $code) => gzencode('{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"code":"'.$code.'","level":"'.$level.'"},"geometry":{"type":"Point","coordinates":[106.8,-6.2]}}]}');
+        file_put_contents($path.'/provinces.geojson.gz', $collection('province', '31'));
+        file_put_contents($path.'/villages-31.geojson.gz', $collection('village', '31.71.01.1001'));
+        file_put_contents($path.'/villages-32.geojson.gz', $collection('village', '32.04.01.2001'));
+        file_put_contents($path.'/regencies.geojson.gz', $collection('regency', '31.71'));
+        config(['territory.boundary_path' => $path, 'territory.boundaries.levels' => ['province', 'village'], 'territory.boundaries.provinces' => ['31']]);
+        $this->migrate(new InstallOptions(Level::Village, boundaryLevels: [Level::Province, Level::Village]));
+
+        (new TerritorySeeder)->seedBoundaries();
+
+        $this->assertEqualsCanonicalizing(['31', '31.71.01.1001'], DB::table('territory_boundaries')->pluck('code')->all());
+    }
 }
