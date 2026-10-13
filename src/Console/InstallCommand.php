@@ -49,7 +49,8 @@ class InstallCommand extends Command
                 return self::SUCCESS;
             }
 
-            foreach ($installer->install($options, (bool) $this->option('force')) as $path) {
+            $written = $installer->install($options, (bool) $this->option('force'));
+            foreach ($written as $path) {
                 $this->components->twoColumnDetail('ditulis', str_replace(base_path().'/', '', $path));
             }
         } catch (InstallationException $e) {
@@ -60,11 +61,20 @@ class InstallCommand extends Command
 
         $this->downloadBoundaries($options);
 
+        $migration = 'database/migrations/'.basename($written[0]);
+        $migrated = $this->alreadyMigrated($written[0]);
+
         if ($this->option('migrate') || ($this->input->isInteractive() && confirm('Jalankan migrate dan isi data sekarang?', default: true))) {
-            $this->call('migrate', ['--force' => true]);
+            // Migration wilayah yang sudah pernah dijalankan dibuat ulang dengan migrate:refresh agar skema baru berlaku.
+            $migrated
+                ? $this->call('migrate:refresh', ['--path' => $migration, '--force' => true])
+                : $this->call('migrate', ['--force' => true]);
             $options->mode === InstallOptions::EJECT
                 ? $this->call('db:seed', ['--class' => 'Database\\Seeders\\TerritorySeeder', '--force' => true])
                 : $this->call('territory:seed', ['--fresh' => true]);
+        } elseif ($migrated) {
+            $this->components->warn('Migration wilayah sudah pernah dijalankan. Terapkan skema baru dengan (tabel wilayah dibuat ulang):');
+            $this->line("  php artisan migrate:refresh --path={$migration}");
         }
 
         $this->nextSteps($options);
@@ -202,6 +212,9 @@ class InstallCommand extends Command
 
         $this->components->info('Eject selesai. Berkas di atas tidak lagi bergantung pada package; commit ke repo aplikasi, lalu hapus package:');
         $this->line('  composer remove caturseptian/laravel-indonesia-territory');
+        $this->newLine();
+        $this->line('  Supaya php artisan migrate --seed di production ikut mengisi data wilayah, tambahkan di database/seeders/DatabaseSeeder.php:');
+        $this->line('  $this->call(TerritorySeeder::class);');
 
         if ($options->api) {
             $this->newLine();
@@ -209,6 +222,16 @@ class InstallCommand extends Command
             $this->line('  use Illuminate\\Support\\Facades\\Route;');
             $this->line("  ->withRouting(..., then: fn () => Route::middleware(['api', 'throttle:60,1'])->prefix('api/territory')->group(base_path('routes/territory.php')))");
         }
+    }
+
+    /**
+     * Apakah migration ini sudah tercatat di tabel migrations.
+     */
+    private function alreadyMigrated(string $path): bool
+    {
+        $repository = $this->laravel['migrator']->getRepository();
+
+        return $repository->repositoryExists() && in_array(basename($path, '.php'), $repository->getRan(), true);
     }
 
     private function megabytes(int $bytes): string
