@@ -21,4 +21,14 @@ class EmptyPrefixTest extends TestCase
         $this->assertSame('provinces', (new Province)->getTable());
         $this->assertSame('31', Regency::find('31.71')->province->code);
     }
+
+    public function test_pencarian_dengan_prefix_diawali_angka(): void
+    {
+        config(['territory.prefix' => '2025_']);
+        $this->useFixtureData();
+        $this->migrate(new InstallOptions(Level::Province, prefix: '2025_'));
+        $this->artisan('territory:seed')->assertSuccessful();
+
+        $this->assertSame(['31'], Province::search('jakarta')->pluck('code')->all());
+    }
 }

@@ -76,4 +76,15 @@ class ModelsTest extends TestCase
         $this->assertSame('Point', Province::find('31')->boundary->geometry['type']);
         $this->assertNull(Regency::find('31.71')->boundary);
     }
+
+    public function test_pencarian_dengan_prefix_tabel_koneksi_database(): void
+    {
+        $connection = config('database.default');
+        config(["database.connections.{$connection}.prefix" => 'app_']);
+        $this->app['db']->purge($connection);
+        $this->migrate(new InstallOptions(Level::Province));
+        $this->artisan('territory:seed')->assertSuccessful();
+
+        $this->assertSame(['31'], Province::search('jakarta')->pluck('code')->all());
+    }
 }

@@ -16,6 +16,9 @@ trait SearchesByName
     {
         $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], mb_strtolower($term));
 
-        $query->whereRaw("lower({$this->qualifyColumn('name')}) like ? escape '!'", ["%{$escaped}%"]);
+        // wrap() menambahkan prefix tabel koneksi dan tanda kutip, jadi aman untuk prefix apa pun.
+        $column = $query->getQuery()->getGrammar()->wrap($this->qualifyColumn('name'));
+
+        $query->whereRaw("lower({$column}) like ? escape '!'", ["%{$escaped}%"]);
     }
 }
