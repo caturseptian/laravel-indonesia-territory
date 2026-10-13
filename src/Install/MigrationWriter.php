@@ -22,17 +22,27 @@ final class MigrationWriter
             throw new InstallationException('Migration wilayah sudah ada: '.basename($existing[0]).'. Jalankan ulang dengan --force untuk membuatnya ulang.');
         }
 
+        // Tabel dari migration lama ikut dihapus di down(), termasuk bila prefix-nya berubah.
+        $previous = [];
+        foreach ($existing as $file) {
+            preg_match_all("/Schema::create\\('(\\w+)'/", (string) file_get_contents($file), $matches);
+            $previous = [...$previous, ...$matches[1]];
+        }
+
         // Pakai ulang nama berkas lama: migration yang sudah tercatat di tabel migrations tidak boleh
         // muncul lagi dengan nama baru, karena migrate akan mencoba membuat tabel yang sudah ada.
         $path = $existing[0] ?? $directory.'/'.date('Y_m_d_His').self::SUFFIX;
         array_map(unlink(...), array_slice($existing, 1));
         File::ensureDirectoryExists($directory);
-        file_put_contents($path, $this->render($options));
+        file_put_contents($path, $this->render($options, $previous));
 
         return $path;
     }
 
-    public function render(InstallOptions $options): string
+    /**
+     * @param  list<string>  $previousTables  tabel yang dibuat migration sebelumnya, dalam urutan pembuatan
+     */
+    public function render(InstallOptions $options, array $previousTables = []): string
     {
         $up = [];
         foreach ($options->tables() as $table) {
@@ -41,9 +51,13 @@ final class MigrationWriter
             $up[] = "        Schema::create('{$name}', function (Blueprint \$table) {\n".implode("\n", $columns)."\n        });";
         }
 
-        // down() menghapus semua tabel wilayah, termasuk yang dibuat oleh pilihan sebelumnya,
-        // supaya migrate:refresh tetap bersih setelah install ulang dengan pilihan berbeda.
-        $down = array_map(fn (string $table) => "        Schema::dropIfExists('{$options->prefix}{$table}');", array_reverse(self::TABLES));
+        // down() menghapus semua tabel wilayah, termasuk yang dibuat oleh pilihan sebelumnya (juga prefix lama),
+        // supaya install ulang dengan pilihan berbeda tidak menyisakan tabel.
+        $tables = array_values(array_unique([
+            ...array_map(fn (string $table) => $options->prefix.$table, array_reverse(self::TABLES)),
+            ...array_reverse($previousTables),
+        ]));
+        $down = array_map(fn (string $table) => "        Schema::dropIfExists('{$table}');", $tables);
 
         return implode("\n", [
             '<?php',

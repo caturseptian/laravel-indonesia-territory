@@ -65,16 +65,15 @@ class InstallCommand extends Command
         $migrated = $this->alreadyMigrated($written[0]);
 
         if ($this->option('migrate') || ($this->input->isInteractive() && confirm('Jalankan migrate dan isi data sekarang?', default: true))) {
-            // Migration wilayah yang sudah pernah dijalankan dibuat ulang dengan migrate:refresh agar skema baru berlaku.
-            $migrated
-                ? $this->call('migrate:refresh', ['--path' => $migration, '--force' => true])
-                : $this->call('migrate', ['--force' => true]);
+            if ($migrated) {
+                $this->rebuild($written[0]);
+            }
+            $this->call('migrate', ['--force' => true]);
             $options->mode === InstallOptions::EJECT
                 ? $this->call('db:seed', ['--class' => 'Database\\Seeders\\TerritorySeeder', '--force' => true])
                 : $this->call('territory:seed', ['--fresh' => true]);
         } elseif ($migrated) {
-            $this->components->warn('Migration wilayah sudah pernah dijalankan. Terapkan skema baru dengan (tabel wilayah dibuat ulang):');
-            $this->line("  php artisan migrate:refresh --path={$migration}");
+            $this->components->warn("Migration wilayah ({$migration}) sudah pernah dijalankan. Jalankan ulang perintah ini dengan --migrate untuk membangun ulang tabel wilayah; tabel aplikasi lain tidak disentuh.");
         }
 
         $this->nextSteps($options);
@@ -222,6 +221,18 @@ class InstallCommand extends Command
             $this->line('  use Illuminate\\Support\\Facades\\Route;');
             $this->line("  ->withRouting(..., then: fn () => Route::middleware(['api', 'throttle:60,1'])->prefix('api/territory')->group(base_path('routes/territory.php')))");
         }
+    }
+
+    /**
+     * Hapus tabel wilayah lewat down() migration yang baru ditulis (mencakup tabel dari pilihan sebelumnya),
+     * lalu hapus catatannya supaya migrate membuatnya lagi. Migration aplikasi lain tidak disentuh.
+     */
+    private function rebuild(string $path): void
+    {
+        $this->components->task('Menghapus tabel wilayah lama', function () use ($path) {
+            $this->laravel['files']->getRequire($path)->down();
+            $this->laravel['migrator']->getRepository()->delete((object) ['migration' => basename($path, '.php')]);
+        });
     }
 
     /**

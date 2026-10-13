@@ -204,16 +204,17 @@ happens, so check those references before updating.
 
 ## Changing your choices
 
-Run `territory:install --force` with the new options. The migration keeps its file name, so `migrate` does not try
-to create the tables twice. With `--migrate` the installer rebuilds the territory tables right away; otherwise it
-prints the command to do it:
+Run `territory:install --force` with the new options and `--migrate`:
 
 ```bash
-php artisan migrate:refresh --path=database/migrations/xxxx_xx_xx_xxxxxx_create_territory_tables.php
+php artisan territory:install --force --migrate
 ```
 
-This drops and recreates only the territory tables. Tables of your own that reference them with a foreign key
-have to be handled first.
+The migration keeps its file name, so `migrate` never tries to create the tables twice. With `--migrate` the
+installer drops the territory tables (including those created under a previous prefix), forgets that one
+migration and migrates again; your other migrations and tables are not touched. Without `--migrate` it only writes
+the files and tells you to run it again with `--migrate`. Tables of your own that reference territory tables with a
+foreign key have to be handled first.
 
 ## Data sources
 
