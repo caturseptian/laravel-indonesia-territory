@@ -1,203 +1,226 @@
-# Laravel Indonesian Territory: Kode dan Data Wilayah Indonesia
+# Laravel Indonesia Territory
 
-[![tests](https://github.com/caturseptian/laravel-indonesian-territory/actions/workflows/tests.yml/badge.svg)](https://github.com/caturseptian/laravel-indonesian-territory/actions/workflows/tests.yml)
-![PHP](https://img.shields.io/badge/PHP-8.4%20|%208.5-777bb4)
-![Laravel](https://img.shields.io/badge/Laravel-13-ff2d20)
+[![tests](https://github.com/caturseptian/laravel-indonesia-territory/actions/workflows/tests.yml/badge.svg)](https://github.com/caturseptian/laravel-indonesia-territory/actions/workflows/tests.yml)
+[![Packagist Version](https://img.shields.io/packagist/v/caturseptian/laravel-indonesia-territory)](https://packagist.org/packages/caturseptian/laravel-indonesia-territory)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/caturseptian/laravel-indonesia-territory)](https://packagist.org/packages/caturseptian/laravel-indonesia-territory)
+![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777bb4)
+![Laravel](https://img.shields.io/badge/Laravel-11%20|%2012%20|%2013-ff2d20)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-dukung-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/caturseptian)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/caturseptian)
 [![Trakteer](https://img.shields.io/badge/Trakteer-dukung-c0392b)](https://trakteer.id/caturseptian)
 
-Proyek Laravel ini berisi **kode wilayah administrasi pemerintahan Indonesia** (kodifikasi wilayah).
-Isinya provinsi, kabupaten/kota, kecamatan, kelurahan/desa dan kode pos, lengkap dengan migration,
-seeder, model Eloquent dan REST API JSON. Datanya mengikuti
-**Kepmendagri Nomor 300.2.2-2138 Tahun 2025** dan perubahannya, 300.2.2-2430 Tahun 2025 (berlaku 23 Juni 2025).
+Indonesian administrative regions (*kode wilayah*, Kemendagri codes) for Laravel. Pick what you need once, during
+development: provinces only, or all the way down to villages, with or without postal codes, coordinates, boundary
+polygons, islands and the history of code changes. Then either keep the package as a dependency, or **eject**: copy
+the models, migration, seeder and data into your app and remove the package, so production depends on nothing.
 
-| Tingkat | Jumlah | Format kode | Contoh |
+The data follows **Kepmendagri 300.2.2-2138 Tahun 2025**, as amended by 300.2.2-2430 Tahun 2025 (in force since 23 June 2025).
+
+| Level | Count | Code format | Example |
 |---|---:|---|---|
-| Provinsi | 38 | `NN` | `31` Daerah Khusus Ibukota Jakarta |
-| Kabupaten/kota | 514 (416 kabupaten, 98 kota) | `NN.NN` | `31.71` Kota Administrasi Jakarta Pusat |
-| Kecamatan/distrik | 7.285 | `NN.NN.NN` | `31.71.01` Gambir |
-| Kelurahan/desa | 83.762 (8.496 kelurahan, 75.252 desa, 14 desa adat) | `NN.NN.NN.NNNN` | `31.71.01.1001` Gambir, kode pos 10110 |
+| Province (provinsi) | 38 | `NN` | `31` Daerah Khusus Ibukota Jakarta |
+| Regency/city (kabupaten/kota) | 514 (416 kabupaten, 98 kota) | `NN.NN` | `31.71` Kota Administrasi Jakarta Pusat |
+| District (kecamatan/distrik) | 7,285 | `NN.NN.NN` | `31.71.01` Gambir |
+| Village (kelurahan/desa) | 83,762 (8,496 kelurahan, 75,252 desa, 14 desa adat) | `NN.NN.NN.NNNN` | `31.71.01.1001` Gambir |
+| Island (pulau) | 17,374 | `NN.NN.4NNNN` | `31.01.40001` |
 
-Kode pos tersedia untuk 72.329 kelurahan/desa. Sisanya `null` karena tidak ada kecocokan pasti di data Pos Indonesia.
+Postal codes are available for 72,329 villages; the rest are `null` because Pos Indonesia has no exact match.
 
-> Proyek ini independen dan tidak berafiliasi dengan Kementerian Dalam Negeri. Data diolah dari dokumen
-> regulasi yang terbit untuk publik. Untuk keperluan resmi, rujuk dokumen aslinya.
+> This is an independent project, not affiliated with the Ministry of Home Affairs. The data is derived from
+> publicly available regulations. For official use, refer to the original documents.
 
-## Tanpa instalasi: Indonesia Region API
-
-Data yang sama tersedia online di **[indonesia-region.caturseptian.site](https://indonesia-region.caturseptian.site)**:
-gratis, tanpa API key dan tanpa server sendiri. Cocok kalau Anda hanya butuh datanya, atau memakai bahasa selain PHP.
-
-| Halaman | Isi |
-|---|---|
-| [Dokumentasi API](https://indonesia-region.caturseptian.site/id/docs) | daftar endpoint, format kode, contoh klien Go, PHP, Java, TypeScript |
-| [API Explorer](https://indonesia-region.caturseptian.site/id/explorer) | telusuri provinsi sampai kelurahan/desa langsung di browser |
-| [Peta](https://indonesia-region.caturseptian.site/id/map) | batas wilayah BIG sampai tingkat desa dan 17.374 pulau bernama |
-| [Unduhan](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.csv) | seluruh data dalam [CSV](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.csv), [JSON](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.json), [SQL](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.sql), [XLSX](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.xlsx), [XML](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.xml), [PDF](https://indonesia-region.caturseptian.site/api/v1/export/indonesia-regions.pdf) |
+## Installation
 
 ```bash
-curl https://indonesia-region.caturseptian.site/api/v1/provinces.json
-curl https://indonesia-region.caturseptian.site/api/v1/districts/31.71.01/villages.json
+# Eject: install as a dev dependency, copy everything into the app, then remove it
+composer require caturseptian/laravel-indonesia-territory --dev
+
+# Dependent: keep the package in production
+composer require caturseptian/laravel-indonesia-territory
+
+php artisan territory:install
 ```
 
-Alamat cadangan jika domain utama tidak dapat diakses: `https://indonesia-region-api.caturseptian-dev.workers.dev` (path API sama).
+The installer asks what to install, shows a summary (tables, row counts, download size) and writes:
 
-Selain data di repositori ini, situs tersebut juga menyediakan koordinat, poligon batas wilayah, data pulau
-dan riwayat perubahan kode sejak 2017.
+- `database/migrations/…_create_territory_tables.php` with only the tables and columns you picked,
+- `config/territory.php` with your choices and the dataset version,
+- in eject mode: models, enums, seeder (and the API controllers if enabled) under `App\…`, plus the data files in `database/data/territory/`.
 
-## Isi repositori
+It refuses to run in production unless you pass `--force`, and it refuses to overwrite an existing install unless you pass `--force`.
 
-- `database/data/*.csv`: data wilayah dalam CSV biasa. Bisa dipakai tanpa Laravel, misalnya untuk impor ke Excel, Python atau database lain.
-- `database/migrations/…_create_territory_tables.php`: tabel `provinces`, `regencies`, `districts`, `villages`. Kolom `code` resmi menjadi primary key, dan antartabel terhubung dengan foreign key.
-- `database/seeders/TerritorySeeder.php`: mengisi seluruh 91.599 baris dalam waktu kurang dari satu detik di SQLite.
-- `app/Models`: `Province`, `Regency`, `District`, `Village` beserta relasinya, plus enum `RegencyType` dan `VillageType`.
-- `routes/api.php`: REST API hanya-baca.
-- `php artisan territory:sync`: mengunduh data terbaru dari Indonesia Region API.
+### Options
 
-## Kebutuhan
+| Option | Values | Notes |
+|---|---|---|
+| `--levels=` | `province`, `regency`, `district`, `village` | the deepest level; the levels above it are always included |
+| `--with=` | `postal`, `coordinates`, `islands`, `changes` | comma separated; `postal` needs `village`, `islands` needs `regency` or deeper |
+| `--boundaries=` | levels, comma separated | boundary polygons to download; each must be installed |
+| `--boundary-provinces=` | `all` or province codes, e.g. `31,32` | limits district and village boundaries |
+| `--mode=` | `dependent`, `eject` | |
+| `--api` | flag | enables the read-only REST API |
+| `--prefix=` | default `territory_` | lowercase letters, digits and `_`; may be empty |
+| `--migrate` | flag | runs `migrate` and seeds right away |
+| `--force` | flag | overwrite an existing install, allow production |
 
-- PHP 8.4 atau 8.5 (disarankan 8.5) dengan ekstensi `pdo_sqlite`, `pdo_mysql` atau `pdo_pgsql`
-- Composer 2
-- Laravel 13
-
-## Instalasi
+Non-interactive, for CI or a setup script:
 
 ```bash
-git clone https://github.com/caturseptian/laravel-indonesian-territory.git
-cd laravel-indonesian-territory
-composer setup      # install, .env, APP_KEY, database SQLite, migrate --seed
-php artisan serve
+php artisan territory:install -n --levels=village --with=postal,coordinates \
+  --boundaries=province,regency --mode=eject --migrate
 ```
 
-Untuk MySQL/MariaDB atau PostgreSQL, ubah `DB_CONNECTION` dan kredensial database di `.env`, lalu jalankan:
+Without options, `-n` installs down to villages with postal codes and coordinates, in dependent mode.
 
-```bash
-php artisan migrate --seed
-```
+### Dependent or eject?
 
-### Memakai data di proyek Laravel lain
+| | Eject | Dependent |
+|---|---|---|
+| Lives in your app | migration, seeder, models (`App\Models\Territory\…`), enums, data in `database/data/territory/` | migration and `config/territory.php` |
+| After install | `composer remove caturseptian/laravel-indonesia-territory` | the package stays in `require` |
+| Production needs | `php artisan migrate --seed` (no internet, no package) | the package |
+| Data updates | run `territory:install --force` again during development | `composer update`, then `php artisan territory:seed --fresh` |
 
-Salin berkas berikut ke proyek Anda:
-`database/data/`, migration `create_territory_tables`, `TerritorySeeder`, `app/Models/{Province,Regency,District,Village}.php`
-dan `app/Enums/`. Setelah itu jalankan:
-
-```bash
-php artisan migrate
-php artisan db:seed --class=TerritorySeeder
-```
-
-## Contoh penggunaan
+After ejecting with `--api`, register the copied routes in `bootstrap/app.php`:
 
 ```php
-use App\Models\District;
-use App\Models\Province;
-use App\Models\Village;
+->withRouting(
+    // ...
+    then: fn () => Route::middleware(['api', 'throttle:60,1'])
+        ->prefix('api/territory')
+        ->group(base_path('routes/territory.php')),
+)
+```
 
-Province::find('32')->regencies;                    // kabupaten/kota di Jawa Barat
-District::find('31.71.01')->villages;               // kelurahan di Kecamatan Gambir
-Village::where('postal_code', '10110')->get();      // wilayah dengan kode pos 10110
+## Usage
+
+```php
+use CaturSeptian\IndonesiaTerritory\Models\Province;   // after eject: App\Models\Territory\Province
+use CaturSeptian\IndonesiaTerritory\Models\Village;
+
+Province::find('32')->regencies;                           // regencies and cities in Jawa Barat
 Village::find('31.71.01.1001')->district->regency->province->name;
 // "Daerah Khusus Ibukota Jakarta"
+Village::where('postal_code', '10110')->get();
+Village::search('gambir')->get();                          // case-insensitive, % and _ are literal
+Province::find('31')->boundary?->geometry;                 // GeoJSON geometry as an array
 ```
 
-Kode selalu berupa **string**. Pertahankan titik dan angka nol di depannya: `32.04` adalah Kabupaten Bandung, sedangkan `32.73` adalah Kota Bandung.
+Codes are always **strings**. Keep the dots and leading zeros: `32.04` is Kabupaten Bandung, `32.73` is Kota Bandung.
 
-## REST API
+Helpers that need no database:
 
-| Endpoint | Hasil |
+```php
+use CaturSeptian\IndonesiaTerritory\Enums\Level;
+use CaturSeptian\IndonesiaTerritory\Territory;
+
+Territory::level('31.71.01.1001');            // Level::Village
+Territory::parents('31.71.01.1001');          // ['province' => '31', 'regency' => '31.71', 'district' => '31.71.01']
+Territory::isValid('31.70', Level::Regency);  // false: 01-69 are kabupaten, 71-99 are kota
+```
+
+Validation:
+
+```php
+use CaturSeptian\IndonesiaTerritory\Rules\TerritoryCode;
+
+$request->validate([
+    'village_code' => ['required', new TerritoryCode(Level::Village, exists: true)],
+]);
+```
+
+### REST API
+
+Disabled by default. Enable it with `--api` or `'api' => ['enabled' => true]` in `config/territory.php`.
+Routes are registered only for the levels you installed, under `api/territory` by default.
+
+| Endpoint | Returns |
 |---|---|
-| `GET /api/provinces` | semua provinsi |
-| `GET /api/provinces/{kode}` | satu provinsi beserta jumlah kabupaten/kota |
-| `GET /api/provinces/{kode}/regencies` | kabupaten/kota di provinsi tersebut |
-| `GET /api/regencies/{kode}` | satu kabupaten/kota beserta provinsinya |
-| `GET /api/regencies/{kode}/districts` | kecamatan di kabupaten/kota tersebut |
-| `GET /api/districts/{kode}` | satu kecamatan beserta induknya |
-| `GET /api/districts/{kode}/villages` | kelurahan/desa di kecamatan tersebut |
-| `GET /api/villages/{kode}` | satu kelurahan/desa beserta seluruh induknya |
-| `GET /api/villages?q={nama}` | cari kelurahan/desa berdasarkan nama (minimal 3 huruf, 50 per halaman) |
-| `GET /api/villages?postal_code={kode_pos}` | cari kelurahan/desa berdasarkan kode pos |
+| `GET /provinces` | all provinces |
+| `GET /provinces/{code}` | one province with its regency count |
+| `GET /provinces/{code}/regencies` | regencies and cities of a province |
+| `GET /regencies/{code}` | one regency or city with its province |
+| `GET /regencies/{code}/districts` | districts of a regency or city |
+| `GET /districts/{code}` | one district with its parents |
+| `GET /districts/{code}/villages` | villages of a district |
+| `GET /villages?search=` / `?postal_code=` | search by name (3+ characters) or postal code, 50 per page |
+| `GET /villages/{code}` | one village with all its parents |
 
-Kode yang tidak dikenal menghasilkan HTTP 404.
+Unknown codes return 404.
+
+## Boundaries
+
+Boundary polygons come from Badan Informasi Geospasial (BIG), simplified, and are downloaded during install
+rather than shipped with the package. Approximate sizes for the whole country:
+
+| Level | Size |
+|---|---:|
+| Province | 0.4 MB |
+| Regency/city | 3.8 MB |
+| District | 37.7 MB |
+| Village | 238.9 MB |
+
+District and village boundaries can be limited to some provinces with `--boundary-provinces`. Every file is checked
+against a SHA-256 checksum recorded in the package, so a given package version always gets exactly the same
+polygons. They are stored in a `boundaries` table as GeoJSON text, which works on SQLite, MySQL and PostgreSQL.
+
+If a download is interrupted, continue it with:
 
 ```bash
-curl http://localhost:8000/api/villages/31.71.01.1001
+php artisan territory:boundaries
 ```
 
-```json
-{
-  "data": {
-    "code": "31.71.01.1001",
-    "name": "Gambir",
-    "type": "kelurahan",
-    "postal_code": "10110",
-    "district_code": "31.71.01",
-    "district": {
-      "code": "31.71.01",
-      "name": "Gambir",
-      "regency_code": "31.71",
-      "regency": {
-        "code": "31.71",
-        "name": "Kota Administrasi Jakarta Pusat",
-        "type": "kota",
-        "province_code": "31",
-        "province": { "code": "31", "name": "Daerah Khusus Ibukota Jakarta" }
-      }
-    }
-  }
-}
-```
+## Updating the data
 
-## Sumber data
+A new Kemendagri decree is released as a new minor version of the package. In dependent mode, run
+`composer update caturseptian/laravel-indonesia-territory` and then `php artisan territory:seed --fresh`.
+In eject mode, require the new version during development, run `territory:install --force` with the same options
+and commit the result.
 
-| Dokumen | Dipakai untuk |
+## Data sources
+
+| Source | Used for |
 |---|---|
-| Kepmendagri 300.2.2-2138 Tahun 2025 | tabel kode dan nama wilayah yang berlaku saat ini |
-| Kepmendagri 300.2.2-2430 Tahun 2025 | perubahan (hanya data pulau, tidak mengubah kode atau nama wilayah) |
-| Permendagri 58 Tahun 2021 | aturan format kode |
-| Pos Indonesia | kode pos, dicocokkan per nama kelurahan/desa di dalam kecamatannya |
+| Kepmendagri 300.2.2-2138 Tahun 2025 | current region codes and names |
+| Kepmendagri 300.2.2-2430 Tahun 2025 | amendment (island data only) |
+| Kepmendagri 100.1.1-6117 Tahun 2022, Permendagri 137 Tahun 2017 | history of code changes |
+| Permendagri 58 Tahun 2021 | code format rules |
+| Badan Informasi Geospasial (BIG) | boundaries and coordinates |
+| Pos Indonesia | postal codes, matched by exact village name within its district |
 
-Data diekstrak dan divalidasi oleh proyek [Indonesia Region API](https://indonesia-region.caturseptian.site).
-Jumlah wilayah sama dengan rekapitulasi Lampiran A di Kepmendagri. Jumlah kecamatan dan kelurahan/desa
-yang tercetak di setiap baris kabupaten/kota juga sama dengan jumlah baris di bawahnya. Nama wilayah
-ditulis persis seperti di dokumen. Pengujian di `tests/Unit/TerritoryDataTest.php` memeriksa format kode,
-keunikan kode, induk setiap wilayah dan kesesuaian jenis wilayah dengan kodenya.
+The data is extracted and validated by [Indonesia Region API](https://indonesia-region.caturseptian.site), which
+also offers the same data without installation: an [explorer](https://indonesia-region.caturseptian.site/explorer),
+a [map](https://indonesia-region.caturseptian.site/map) and downloads in CSV, JSON, SQL, XLSX, XML and PDF.
+Backup address: `https://indonesia-region-api.caturseptian-dev.workers.dev`.
 
-Untuk memperbarui data ke versi terbaru dari [Indonesia Region API](https://indonesia-region.caturseptian.site):
+## Ringkasan (Bahasa Indonesia)
 
-```bash
-php artisan territory:sync
-php artisan migrate:fresh --seed
-```
+Package Laravel untuk kode wilayah administrasi Indonesia sesuai Kepmendagri 300.2.2-2138 Tahun 2025: provinsi,
+kabupaten/kota, kecamatan, kelurahan/desa, kode pos, koordinat, batas wilayah (poligon BIG), pulau, dan riwayat
+perubahan kode sejak 2017.
 
-## Pengujian
+Pasang dengan `composer require caturseptian/laravel-indonesia-territory --dev`, lalu jalankan
+`php artisan territory:install`. Installer menanyakan sampai level mana data dipasang dan data tambahan apa saja
+yang diperlukan, lalu membuat migration yang hanya berisi tabel dan kolom yang dipilih.
+
+Ada dua mode. **Eject** menyalin model, migration, seeder, dan data ke aplikasi, sehingga package bisa dihapus dan
+production cukup menjalankan `php artisan migrate --seed` tanpa internet. **Dependent** membiarkan package tetap
+terpasang, dan data diperbarui lewat `composer update` lalu `php artisan territory:seed --fresh`.
+
+Kode wilayah selalu berupa string dengan titik dan angka nol di depan, misalnya `31.71.01.1001`.
+
+## Testing
 
 ```bash
 composer test
 ```
 
-## Dukung proyek ini
+## Support
 
-Repositori ini gratis. Kalau membantu pekerjaanmu, kamu bisa ikut menanggung biaya server dan pembaruan data:
+The package is free. If it helps your work, you can help cover the server and data updates:
 [Trakteer](https://trakteer.id/caturseptian) · [Saweria](https://saweria.co/forcaturseptian) ·
 [Ko-fi](https://ko-fi.com/caturseptian) · [Buy Me a Coffee](https://buymeacoffee.com/caturseptian) · [PayPal](https://paypal.me/ccseptian).
 
-## English
+## License
 
-**Laravel Indonesian Territory** provides the official administrative region codes of Indonesia
-(*kode wilayah*) for Laravel 13 on PHP 8.4 or newer. It covers 38 provinces, 514 regencies and cities,
-7,285 districts and 83,762 villages, plus postal codes, following the Ministry of Home Affairs decree
-Kepmendagri 300.2.2-2138/2025. The repository ships plain CSV files, a migration, a fast seeder,
-Eloquent models and a read-only JSON REST API. Codes are strings in the official dotted format, for example
-`31.71.01.1001`. Install with `composer setup`, then call `GET /api/provinces`.
-The same data, plus coordinates, boundaries, islands and downloads, is available without installation
-at [indonesia-region.caturseptian.site](https://indonesia-region.caturseptian.site) (English docs at `/docs`).
-If it helps your work, you can support it on [Ko-fi](https://ko-fi.com/caturseptian), [Buy Me a Coffee](https://buymeacoffee.com/caturseptian) or [PayPal](https://paypal.me/ccseptian).
-
-## Lisensi
-
-Kode program dirilis dengan [lisensi MIT](LICENSE). Data wilayah berasal dari dokumen pemerintah yang terbit untuk publik.
-
-**Kata kunci:** kode wilayah Indonesia, kodifikasi wilayah, data wilayah Indonesia, kode wilayah Kemendagri 2025,
-daftar provinsi kabupaten kota kecamatan kelurahan desa, kode pos Indonesia, seeder wilayah Laravel,
-database wilayah Indonesia SQL, Indonesian administrative regions, Indonesia region codes.
+The code is released under the [MIT license](LICENSE). The region data comes from publicly published government documents.
