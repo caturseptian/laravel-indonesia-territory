@@ -18,4 +18,9 @@ class ServiceProviderTest extends TestCase
         $this->assertSame($this->workspace.'/database/migrations', database_path('migrations'));
         $this->assertDirectoryExists(app_path());
     }
+
+    public function test_route_api_tidak_terdaftar_secara_default(): void
+    {
+        $this->getJson('/api/territory/provinces')->assertNotFound();
+    }
 }
