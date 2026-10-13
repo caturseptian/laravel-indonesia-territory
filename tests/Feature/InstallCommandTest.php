@@ -5,11 +5,24 @@ namespace CaturSeptian\IndonesiaTerritory\Tests\Feature;
 use CaturSeptian\IndonesiaTerritory\Data\BoundaryDownloader;
 use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
 use CaturSeptian\IndonesiaTerritory\Tests\TestCase;
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 
 class InstallCommandTest extends TestCase
 {
+    /**
+     * Migrator menyimpan berkas migration yang sudah di-require selama proses berjalan. Di aplikasi nyata
+     * setiap territory:install adalah proses baru; di test, dua install berjalan dalam satu proses.
+     */
+    private function forgetLoadedMigrations(): void
+    {
+        if (property_exists(Migrator::class, 'requiredPathCache')) {
+            (new \ReflectionProperty(Migrator::class, 'requiredPathCache'))->setValue(null, []);
+        }
+    }
+
     public function test_non_interaktif_dependent_dengan_migrate(): void
     {
         $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--migrate' => true])
@@ -107,6 +120,40 @@ class InstallCommandTest extends TestCase
             ->expectsOutputToContain('composer remove caturseptian/laravel-indonesia-territory')
             ->expectsOutputToContain('use Illuminate\\Support\\Facades\\Route;')
             ->expectsOutputToContain("base_path('routes/territory.php')")
+            ->assertSuccessful();
+    }
+
+    public function test_install_ulang_dengan_force_mengganti_skema_yang_sudah_dimigrasi(): void
+    {
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--with' => '', '--migrate' => true])->assertSuccessful();
+
+        $this->forgetLoadedMigrations();
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'regency', '--with' => '', '--force' => true, '--migrate' => true])
+            ->assertSuccessful();
+
+        $this->assertSame(514, DB::table('territory_regencies')->count());
+        $this->assertCount(1, glob(database_path('migrations/*_create_territory_tables.php')));
+        $this->artisan('migrate', ['--force' => true])->assertSuccessful();
+    }
+
+    public function test_install_ulang_tanpa_migrate_memberi_perintah_refresh(): void
+    {
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--with' => '', '--migrate' => true])->assertSuccessful();
+
+        $this->forgetLoadedMigrations();
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'regency', '--with' => '', '--force' => true])
+            ->expectsOutputToContain('migrate:refresh --path=database/migrations/')
+            ->assertSuccessful();
+
+        $path = basename(glob(database_path('migrations/*_create_territory_tables.php'))[0]);
+        $this->artisan('migrate:refresh', ['--path' => "database/migrations/{$path}", '--force' => true])->assertSuccessful();
+        $this->assertTrue(Schema::hasTable('territory_regencies'));
+    }
+
+    public function test_eject_mengingatkan_memanggil_seeder_dari_database_seeder(): void
+    {
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--mode' => 'eject'])
+            ->expectsOutputToContain('$this->call(TerritorySeeder::class);')
             ->assertSuccessful();
     }
 }
