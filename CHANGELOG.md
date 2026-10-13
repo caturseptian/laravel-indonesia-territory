@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 - unreleased
+## 1.0.0 - 2026-10-13
 
 - Repo berubah dari aplikasi Laravel menjadi package `caturseptian/laravel-indonesia-territory`. Versi aplikasi tersimpan di tag `app-final`.
 - `territory:install` interaktif dan non-interaktif: level wilayah, kode pos, koordinat, pulau, riwayat perubahan kode, boundary per provinsi.
