@@ -6,6 +6,7 @@ use CaturSeptian\IndonesiaTerritory\Console\BoundariesCommand;
 use CaturSeptian\IndonesiaTerritory\Console\SeedCommand;
 use CaturSeptian\IndonesiaTerritory\Data\BoundaryDownloader;
 use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class IndonesiaTerritoryServiceProvider extends ServiceProvider
@@ -26,6 +27,12 @@ class IndonesiaTerritoryServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([SeedCommand::class, BoundariesCommand::class]);
+        }
+
+        if (config('territory.api.enabled') && config('territory.mode') !== 'eject') {
+            Route::prefix(config('territory.api.prefix'))
+                ->middleware(config('territory.api.middleware'))
+                ->group(__DIR__.'/../routes/api.php');
         }
     }
 }
