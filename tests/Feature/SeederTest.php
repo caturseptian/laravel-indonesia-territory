@@ -5,10 +5,12 @@ namespace CaturSeptian\IndonesiaTerritory\Tests\Feature;
 use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
 use CaturSeptian\IndonesiaTerritory\Enums\Level;
 use CaturSeptian\IndonesiaTerritory\Install\InstallOptions;
+use CaturSeptian\IndonesiaTerritory\Seeding\TerritorySeeder;
 use CaturSeptian\IndonesiaTerritory\Tests\Fixtures;
 use CaturSeptian\IndonesiaTerritory\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 class SeederTest extends TestCase
 {
@@ -91,5 +93,84 @@ class SeederTest extends TestCase
         foreach (DataRepository::package()->manifest()['files'] as $name => $file) {
             $this->assertSame($file['rows'], DB::table("territory_{$name}")->count(), $name);
         }
+    }
+
+    public function test_fresh_mempertahankan_baris_yang_direferensikan_aplikasi(): void
+    {
+        $this->useFixtureData();
+        $this->migrate(new InstallOptions(Level::Village));
+        $this->artisan('territory:seed')->assertSuccessful();
+        // SQLite di Testbench tidak menegakkan foreign key secara default; MySQL dan PostgreSQL selalu menegakkannya.
+        Schema::enableForeignKeyConstraints();
+        Schema::create('addresses', function ($table) {
+            $table->id();
+            $table->string('village_code', 13);
+            $table->foreign('village_code')->references('code')->on('territory_villages');
+        });
+        DB::table('addresses')->insert(['village_code' => '31.71.01.1001']);
+        $count = DB::table('territory_villages')->count();
+
+        $this->artisan('territory:seed', ['--fresh' => true])->assertSuccessful();
+
+        $this->assertSame(1, DB::table('addresses')->count());
+        $this->assertSame($count, DB::table('territory_villages')->count());
+    }
+
+    public function test_fresh_menghapus_kode_yang_tidak_ada_lagi_di_data(): void
+    {
+        $this->useFixtureData();
+        $this->migrate(new InstallOptions(Level::Village));
+        $this->artisan('territory:seed')->assertSuccessful();
+        DB::table('territory_villages')->insert(['code' => '31.71.01.1999', 'district_code' => '31.71.01', 'type' => 'kelurahan', 'name' => 'Lama']);
+
+        $this->artisan('territory:seed', ['--fresh' => true])->assertSuccessful();
+
+        $this->assertFalse(DB::table('territory_villages')->where('code', '31.71.01.1999')->exists());
+    }
+
+    public function test_memperingatkan_bila_boundary_dikonfigurasi_tetapi_belum_diunduh(): void
+    {
+        $this->useFixtureData();
+        config(['territory.boundaries.levels' => ['province'], 'territory.boundary_path' => $this->workspace.'/kosong']);
+        $this->migrate(new InstallOptions(Level::Province, boundaryLevels: [Level::Province]));
+
+        $this->artisan('territory:seed')->expectsOutputToContain('territory:boundaries')->assertSuccessful();
+    }
+
+    public function test_boundary_besar_diisi_tanpa_memuat_seluruh_berkas_ke_memori(): void
+    {
+        $this->useFixtureData();
+        File::ensureDirectoryExists($path = $this->workspace.'/boundaries');
+        $ring = json_encode(array_map(fn (int $i) => [106 + $i / 1000, -6 - $i / 1000], range(0, 500)));
+        $handle = fopen('compress.zlib://'.$path.'/villages-31.geojson.gz', 'w');
+        fwrite($handle, '{"type":"FeatureCollection","features":['."\n");
+        for ($i = 1; $i <= 2000; $i++) {
+            $code = sprintf('31.71.01.%04d', 1000 + $i);
+            fwrite($handle, '{"type":"Feature","id":"'.$code.'","properties":{"code":"'.$code.'","level":"village"},"geometry":{"type":"Polygon","coordinates":[['.$ring.','.$ring.']]}}'.($i < 2000 ? ',' : '')."\n");
+        }
+        fwrite($handle, ']}'."\n");
+        fclose($handle);
+        config(['territory.boundary_path' => $path]);
+        $this->migrate(new InstallOptions(Level::Province, boundaryLevels: [Level::Province]));
+
+        $before = memory_get_usage();
+        memory_reset_peak_usage();
+        (new TerritorySeeder)->seedBoundaries();
+
+        $this->assertSame(2000, DB::table('territory_boundaries')->count());
+        $this->assertLessThan(64 * 1024 * 1024, memory_get_peak_usage() - $before);
+    }
+
+    public function test_boundary_satu_baris_tetap_terbaca(): void
+    {
+        $this->useFixtureData();
+        File::ensureDirectoryExists($path = $this->workspace.'/boundaries');
+        file_put_contents($path.'/provinces.geojson.gz', gzencode('{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"code":"31","level":"province"},"geometry":{"type":"Point","coordinates":[106.8,-6.2]}}]}'));
+        config(['territory.boundary_path' => $path]);
+        $this->migrate(new InstallOptions(Level::Province, boundaryLevels: [Level::Province]));
+
+        (new TerritorySeeder)->seedBoundaries();
+
+        $this->assertSame(1, DB::table('territory_boundaries')->count());
     }
 }
