@@ -205,8 +205,9 @@ class InstallCommand extends Command
 
         if ($options->api) {
             $this->newLine();
-            $this->line('  Daftarkan route API di bootstrap/app.php, di dalam withRouting(...):');
-            $this->line("  then: fn () => Route::middleware(['api', 'throttle:60,1'])->prefix('api/territory')->group(base_path('routes/territory.php')),");
+            $this->line('  Daftarkan route API di bootstrap/app.php:');
+            $this->line('  use Illuminate\\Support\\Facades\\Route;');
+            $this->line("  ->withRouting(..., then: fn () => Route::middleware(['api', 'throttle:60,1'])->prefix('api/territory')->group(base_path('routes/territory.php')))");
         }
     }
 

@@ -105,6 +105,7 @@ class InstallCommandTest extends TestCase
     {
         $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--mode' => 'eject', '--api' => true])
             ->expectsOutputToContain('composer remove caturseptian/laravel-indonesia-territory')
+            ->expectsOutputToContain('use Illuminate\\Support\\Facades\\Route;')
             ->expectsOutputToContain("base_path('routes/territory.php')")
             ->assertSuccessful();
     }
