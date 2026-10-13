@@ -3,6 +3,7 @@
 namespace CaturSeptian\IndonesiaTerritory;
 
 use CaturSeptian\IndonesiaTerritory\Console\BoundariesCommand;
+use CaturSeptian\IndonesiaTerritory\Console\InstallCommand;
 use CaturSeptian\IndonesiaTerritory\Console\SeedCommand;
 use CaturSeptian\IndonesiaTerritory\Data\BoundaryDownloader;
 use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
@@ -26,7 +27,7 @@ class IndonesiaTerritoryServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([SeedCommand::class, BoundariesCommand::class]);
+            $this->commands([InstallCommand::class, SeedCommand::class, BoundariesCommand::class]);
         }
 
         if (config('territory.api.enabled') && config('territory.mode') !== 'eject') {
