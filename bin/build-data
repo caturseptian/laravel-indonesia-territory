@@ -1,0 +1,166 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Membangun resources/data dari Indonesia Region API.
+ *
+ *   php bin/build-data [base-url]
+ *
+ * Dipakai saat menyiapkan rilis saja; folder bin/ tidak ikut terunduh lewat Composer.
+ */
+
+declare(strict_types=1);
+
+const COLUMNS = [
+    'provinces' => ['code', 'name', 'latitude', 'longitude', 'spatial_status', 'bbox'],
+    'regencies' => ['code', 'province_code', 'type', 'name', 'latitude', 'longitude', 'spatial_status', 'bbox'],
+    'districts' => ['code', 'regency_code', 'name', 'latitude', 'longitude', 'spatial_status', 'bbox'],
+    'villages' => ['code', 'district_code', 'type', 'name', 'postal_code', 'latitude', 'longitude', 'spatial_status', 'bbox'],
+    'islands' => ['code', 'name', 'province_code', 'regency_code', 'latitude', 'longitude', 'area_km2', 'inhabited'],
+    'code_changes' => ['from_document', 'to_document', 'level', 'change', 'code', 'old_name', 'new_name'],
+];
+
+$base = rtrim($argv[1] ?? 'https://indonesia-region.caturseptian.site', '/');
+$api = $base.'/api/v1';
+$target = dirname(__DIR__).'/resources/data';
+@mkdir($target, 0777, true);
+
+function context(): mixed
+{
+    return stream_context_create(['http' => [
+        'timeout' => 600,
+        'header' => "Accept-Encoding: identity\r\nUser-Agent: laravel-indonesia-territory build-data\r\n",
+    ]]);
+}
+
+function fetchJson(string $url): array
+{
+    $body = @file_get_contents($url, false, context());
+    if ($body === false) {
+        fwrite(STDERR, "Gagal mengunduh {$url}\n");
+        exit(1);
+    }
+
+    return json_decode($body, true, flags: JSON_THROW_ON_ERROR);
+}
+
+function cell(mixed $value): string
+{
+    return match (true) {
+        $value === null => '',
+        is_bool($value) => $value ? '1' : '0',
+        is_array($value) => json_encode($value, JSON_THROW_ON_ERROR),
+        default => (string) $value,
+    };
+}
+
+/**
+ * @param  iterable<array<string, mixed>>  $rows
+ * @return array{file: string, rows: int, sha256: string}
+ */
+function writeCsv(string $directory, string $name, iterable $rows): array
+{
+    $path = "{$directory}/{$name}.csv.gz";
+    $handle = fopen('compress.zlib://'.$path, 'w');
+    fputcsv($handle, COLUMNS[$name], escape: '');
+
+    $count = 0;
+    foreach ($rows as $row) {
+        $key = $name === 'code_changes' ? 'level' : 'name';
+        if (($row['code'] ?? '') === '' || ($row[$key] ?? '') === '') {
+            fwrite(STDERR, "Baris {$name} tanpa code/{$key}: ".json_encode($row)."\n");
+            exit(1);
+        }
+        fputcsv($handle, array_map(fn (string $column) => cell($row[$column] ?? null), COLUMNS[$name]), escape: '');
+        $count++;
+    }
+    fclose($handle);
+
+    return ['file' => "{$name}.csv.gz", 'rows' => $count, 'sha256' => hash_file('sha256', $path)];
+}
+
+/**
+ * @return array{int, string} ukuran dan sha256 berkas di URL, dihitung sambil streaming.
+ */
+function hashRemote(string $url): array
+{
+    $handle = @fopen($url, 'rb', false, context());
+    if ($handle === false) {
+        fwrite(STDERR, "Gagal mengunduh {$url}\n");
+        exit(1);
+    }
+
+    $hash = hash_init('sha256');
+    $bytes = 0;
+    while (! feof($handle)) {
+        $chunk = fread($handle, 1 << 20);
+        hash_update($hash, $chunk);
+        $bytes += strlen($chunk);
+    }
+    fclose($handle);
+
+    return [$bytes, hash_final($hash)];
+}
+
+$meta = fetchJson("{$api}/meta.json");
+$provinces = fetchJson("{$api}/provinces.json");
+
+$files = [];
+$files['provinces'] = writeCsv($target, 'provinces', $provinces);
+$files['regencies'] = writeCsv($target, 'regencies', fetchJson("{$api}/regencies.json"));
+$files['districts'] = writeCsv($target, 'districts', fetchJson("{$api}/districts.json"));
+$files['villages'] = writeCsv($target, 'villages', (function () use ($api, $provinces) {
+    foreach ($provinces as $province) {
+        yield from fetchJson("{$api}/provinces/{$province['code']}/villages.json");
+    }
+})());
+$files['islands'] = writeCsv($target, 'islands', fetchJson("{$api}/islands.json"));
+$files['code_changes'] = writeCsv($target, 'code_changes', (function () use ($api, $base) {
+    $levels = ['provinces' => 'province', 'regencies' => 'regency', 'districts' => 'district', 'villages' => 'village'];
+    foreach (fetchJson("{$api}/changes.json")['changesets'] as $changeset) {
+        $detail = fetchJson($base.$changeset['url']);
+        foreach ($levels as $plural => $level) {
+            $common = ['from_document' => $detail['from'], 'to_document' => $detail['to'], 'level' => $level];
+            foreach ($detail['added'][$plural] ?? [] as $row) {
+                yield $common + ['change' => 'added', 'code' => $row['code'], 'new_name' => $row['name']];
+            }
+            foreach ($detail['removed'][$plural] ?? [] as $row) {
+                yield $common + ['change' => 'removed', 'code' => $row['code'], 'old_name' => $row['name']];
+            }
+            foreach ($detail['renamed'][$plural] ?? [] as $row) {
+                yield $common + ['change' => 'renamed', 'code' => $row['code'], 'old_name' => $row['from'], 'new_name' => $row['to']];
+            }
+        }
+    }
+})());
+
+foreach (['provinces', 'regencies', 'districts', 'villages'] as $level) {
+    if ($files[$level]['rows'] !== $meta['counts'][$level]) {
+        fwrite(STDERR, "Jumlah {$level} ({$files[$level]['rows']}) tidak sama dengan meta.json ({$meta['counts'][$level]}).\n");
+        exit(1);
+    }
+}
+
+$boundaries = [
+    ['path' => 'provinces.geojson', 'level' => 'province', 'province' => null],
+    ['path' => 'regencies.geojson', 'level' => 'regency', 'province' => null],
+];
+foreach ($provinces as $province) {
+    $boundaries[] = ['path' => "districts-{$province['code']}.geojson", 'level' => 'district', 'province' => $province['code']];
+    $boundaries[] = ['path' => "villages-{$province['code']}.geojson", 'level' => 'village', 'province' => $province['code']];
+}
+foreach ($boundaries as $i => $boundary) {
+    fwrite(STDOUT, "boundary {$boundary['path']}\n");
+    [$bytes, $sha256] = hashRemote("{$api}/export/boundaries/{$boundary['path']}");
+    $boundaries[$i] += ['bytes' => $bytes, 'sha256' => $sha256];
+}
+
+file_put_contents($target.'/manifest.json', json_encode([
+    'dataset_version' => $meta['dataset_version'],
+    'effective_date' => $meta['effective_date'],
+    'source' => 'https://indonesia-region.caturseptian.site',
+    'files' => $files,
+    'boundaries' => $boundaries,
+], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
+
+fwrite(STDOUT, "Selesai: {$meta['dataset_version']}\n");
