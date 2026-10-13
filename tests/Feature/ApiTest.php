@@ -63,9 +63,10 @@ class ApiTest extends TestCase
         $this->getJson('/api/territory/villages')->assertUnprocessable();
     }
 
-    public function test_kode_tidak_dikenal_404(): void
+    public function test_kode_tidak_dikenal_404_tanpa_membocorkan_kelas_internal(): void
     {
-        $this->getJson('/api/territory/provinces/99')->assertNotFound();
-        $this->getJson('/api/territory/villages/31.71.01.1999')->assertNotFound();
+        foreach (['provinces/99', 'regencies/31.70', 'districts/31.71.99', 'villages/31.71.01.1999', 'provinces/99/regencies'] as $path) {
+            $this->getJson("/api/territory/{$path}")->assertNotFound()->assertExactJson(['message' => 'Not Found.']);
+        }
     }
 }
