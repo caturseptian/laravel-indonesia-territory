@@ -110,11 +110,12 @@ final class MigrationWriter
                 "\$table->foreign('district_code')->references('code')->on('{$prefix}districts')->cascadeOnDelete();",
                 "\$table->index('name');",
             ],
+            // Pulau berkode NN.00.4xxxx langsung di bawah provinsi, regency_code-nya kosong.
             'islands' => [
                 "\$table->string('code', 11)->primary();",
                 "\$table->string('name');",
                 "\$table->string('province_code', 2);",
-                "\$table->string('regency_code', 5);",
+                "\$table->string('regency_code', 5)->nullable();",
                 "\$table->decimal('latitude', 9, 6)->nullable();",
                 "\$table->decimal('longitude', 9, 6)->nullable();",
                 "\$table->decimal('area_km2', 12, 4)->nullable();",
