@@ -2,6 +2,7 @@
 
 namespace CaturSeptian\IndonesiaTerritory\Seeding;
 
+use Illuminate\Console\Command;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -24,6 +25,18 @@ class TerritorySeeder extends Seeder
 
     private const BOUNDARY_CHUNK = 50;
 
+    /**
+     * Seeder bisa dijalankan langsung tanpa perintah artisan; $command baru terisi lewat setCommand().
+     */
+    private bool $hasCommand = false;
+
+    public function setCommand(Command $command)
+    {
+        $this->hasCommand = true;
+
+        return parent::setCommand($command);
+    }
+
     public function run(): void
     {
         $prefix = (string) config('territory.prefix', 'territory_');
@@ -39,7 +52,7 @@ class TerritorySeeder extends Seeder
 
         foreach ($tables as $table) {
             DB::transaction(fn () => $this->seedCsv($prefix.$table, "{$dataPath}/{$table}.csv.gz"));
-            $this->command?->line(sprintf('  %s: %s', $prefix.$table, number_format(DB::table($prefix.$table)->count())));
+            $this->report($prefix.$table);
         }
 
         if (Schema::hasTable($prefix.'boundaries')) {
@@ -72,7 +85,17 @@ class TerritorySeeder extends Seeder
             }
         });
 
-        $this->command?->line(sprintf('  %s: %s', $table, number_format(DB::table($table)->count())));
+        $this->report($table);
+    }
+
+    /**
+     * Tampilkan jumlah baris bila dijalankan dari perintah artisan.
+     */
+    private function report(string $table): void
+    {
+        if ($this->hasCommand) {
+            $this->command->line(sprintf('  %s: %s', $table, number_format(DB::table($table)->count())));
+        }
     }
 
     private function seedCsv(string $table, string $path): void

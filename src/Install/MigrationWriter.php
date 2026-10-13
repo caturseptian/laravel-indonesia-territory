@@ -3,6 +3,7 @@
 namespace CaturSeptian\IndonesiaTerritory\Install;
 
 use Illuminate\Support\Facades\File;
+use LogicException;
 
 /**
  * Menulis migration wilayah yang hanya berisi tabel dan kolom pilihan developer.
@@ -141,6 +142,7 @@ final class MigrationWriter
                 "\$table->longText('geometry');",
                 "\$table->primary(['level', 'code']);",
             ],
+            default => throw new LogicException("Tabel wilayah tidak dikenal: {$table}."),
         };
     }
 }
