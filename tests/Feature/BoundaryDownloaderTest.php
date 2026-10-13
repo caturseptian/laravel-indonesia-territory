@@ -161,4 +161,34 @@ class BoundaryDownloaderTest extends TestCase
     {
         $this->artisan('territory:boundaries')->expectsOutputToContain('--boundaries')->assertFailed();
     }
+
+    public function test_checksum_salah_di_url_utama_mencoba_url_cadangan(): void
+    {
+        $good = $this->bodies['provinces.geojson'];
+        Http::fake(fn ($request) => Http::response(str_starts_with($request->url(), self::PRIMARY) ? '{"terpotong":' : $good));
+
+        $this->downloader()->download($this->downloader()->plan([Level::Province], 'all'));
+
+        $this->assertSame($good, gzdecode(file_get_contents($this->workspace.'/boundaries/provinces.geojson.gz')));
+    }
+
+    public function test_404_tidak_diulang(): void
+    {
+        $body = $this->bodies['provinces.geojson'];
+        Http::fake(fn ($request) => str_starts_with($request->url(), self::PRIMARY) ? Http::response('', 404) : Http::response($body));
+
+        $this->downloader()->download($this->downloader()->plan([Level::Province], 'all'));
+
+        Http::assertSentCount(2);
+    }
+
+    public function test_perintah_mengabaikan_koma_di_akhir_daftar_provinsi(): void
+    {
+        $this->fakeServer(self::PRIMARY);
+        config(['territory.boundaries.levels' => ['village']]);
+
+        $this->artisan('territory:boundaries', ['--provinces' => '31,'])->assertSuccessful();
+
+        $this->assertFileExists($this->workspace.'/boundaries/villages-31.geojson.gz');
+    }
 }
