@@ -9,6 +9,7 @@ use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
 use CaturSeptian\IndonesiaTerritory\Tests\TestCase;
 use Database\Seeders\TerritorySeeder;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Hasil eject harus berjalan tanpa kelas package: tidak ada referensi namespace package,
@@ -41,6 +42,8 @@ class EjectEndToEndTest extends TestCase
             $roots = [
                 'App\\Models\\Territory\\' => app_path('Models/Territory/'),
                 'App\\Enums\\Territory\\' => app_path('Enums/Territory/'),
+                'App\\Http\\Controllers\\Territory\\' => app_path('Http/Controllers/Territory/'),
+                'App\\Http\\Resources\\Territory\\' => app_path('Http/Resources/Territory/'),
                 'Database\\Seeders\\' => database_path('seeders/'),
             ];
             foreach ($roots as $namespace => $directory) {
@@ -63,5 +66,14 @@ class EjectEndToEndTest extends TestCase
             Village::count(),
         );
         $this->assertGreaterThan(0, Island::count());
+
+        // Route dan controller hasil eject dipanggil lewat HTTP, didaftarkan seperti petunjuk di README.
+        Route::middleware(['api', 'throttle:60,1'])->prefix('api/ejected')->group(base_path('routes/territory.php'));
+        $this->getJson('/api/ejected/villages/31.71.01.1001')
+            ->assertOk()
+            ->assertJsonPath('data.postal_code', '10110')
+            ->assertJsonPath('data.district.regency.province.code', '31');
+        $this->getJson('/api/ejected/villages?search=gambir')->assertOk()->assertJsonFragment(['code' => '31.71.01.1001']);
+        $this->getJson('/api/ejected/provinces/99')->assertNotFound();
     }
 }
