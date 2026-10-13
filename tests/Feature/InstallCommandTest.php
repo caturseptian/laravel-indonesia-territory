@@ -142,12 +142,13 @@ class InstallCommandTest extends TestCase
 
         $this->forgetLoadedMigrations();
         $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'regency', '--with' => '', '--force' => true])
-            ->expectsOutputToContain('migrate:refresh --path=database/migrations/')
+            ->expectsOutputToContain('--migrate')
             ->assertSuccessful();
+        $this->assertFalse(Schema::hasTable('territory_regencies'));
 
-        $path = basename(glob(database_path('migrations/*_create_territory_tables.php'))[0]);
-        $this->artisan('migrate:refresh', ['--path' => "database/migrations/{$path}", '--force' => true])->assertSuccessful();
-        $this->assertTrue(Schema::hasTable('territory_regencies'));
+        $this->forgetLoadedMigrations();
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'regency', '--with' => '', '--force' => true, '--migrate' => true])->assertSuccessful();
+        $this->assertSame(514, DB::table('territory_regencies')->count());
     }
 
     public function test_eject_mengingatkan_memanggil_seeder_dari_database_seeder(): void
@@ -155,5 +156,41 @@ class InstallCommandTest extends TestCase
         $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--mode' => 'eject'])
             ->expectsOutputToContain('$this->call(TerritorySeeder::class);')
             ->assertSuccessful();
+    }
+
+    public function test_install_ulang_dengan_prefix_baru_tidak_menyisakan_tabel_lama_dan_tidak_menyentuh_migration_aplikasi(): void
+    {
+        file_put_contents(database_path('migrations/0001_01_01_000000_create_widgets_table.php'), <<<'PHP'
+            <?php
+
+            use Illuminate\Database\Migrations\Migration;
+            use Illuminate\Database\Schema\Blueprint;
+            use Illuminate\Support\Facades\Schema;
+
+            return new class extends Migration
+            {
+                public function up(): void
+                {
+                    Schema::create('widgets', fn (Blueprint $table) => $table->id());
+                }
+
+                public function down(): void
+                {
+                    Schema::dropIfExists('widgets');
+                }
+            };
+            PHP);
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'regency', '--with' => '', '--migrate' => true])->assertSuccessful();
+        $this->forgetLoadedMigrations();
+
+        $this->artisan('territory:install', ['--no-interaction' => true, '--levels' => 'province', '--with' => '', '--prefix' => '', '--force' => true, '--migrate' => true])
+            ->doesntExpectOutputToContain('Migration not found')
+            ->assertSuccessful();
+
+        $this->assertFalse(Schema::hasTable('territory_provinces'));
+        $this->assertFalse(Schema::hasTable('territory_regencies'));
+        $this->assertSame(38, DB::table('provinces')->count());
+        $this->assertTrue(Schema::hasTable('widgets'));
+        $this->assertTrue(DB::table('migrations')->where('migration', '0001_01_01_000000_create_widgets_table')->exists());
     }
 }
