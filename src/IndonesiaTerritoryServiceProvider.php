@@ -2,7 +2,9 @@
 
 namespace CaturSeptian\IndonesiaTerritory;
 
+use CaturSeptian\IndonesiaTerritory\Console\BoundariesCommand;
 use CaturSeptian\IndonesiaTerritory\Console\SeedCommand;
+use CaturSeptian\IndonesiaTerritory\Data\BoundaryDownloader;
 use CaturSeptian\IndonesiaTerritory\Data\DataRepository;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,12 +15,17 @@ class IndonesiaTerritoryServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/territory.php', 'territory');
 
         $this->app->singleton(DataRepository::class, fn () => DataRepository::package());
+        $this->app->bind(BoundaryDownloader::class, fn ($app) => new BoundaryDownloader(
+            $app->make(DataRepository::class),
+            config('territory.source.urls'),
+            config('territory.boundary_path'),
+        ));
     }
 
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([SeedCommand::class]);
+            $this->commands([SeedCommand::class, BoundariesCommand::class]);
         }
     }
 }
