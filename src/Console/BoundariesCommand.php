@@ -27,7 +27,7 @@ class BoundariesCommand extends Command
 
         $option = $this->option('provinces');
         $provinces = $option === null ? config('territory.boundaries.provinces', 'all')
-            : ($option === 'all' ? 'all' : array_map('trim', explode(',', $option)));
+            : ($option === 'all' ? 'all' : array_values(array_filter(array_map('trim', explode(',', $option)), fn (string $code) => $code !== '')));
 
         try {
             $downloader->download(

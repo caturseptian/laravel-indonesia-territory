@@ -4,6 +4,8 @@ namespace CaturSeptian\IndonesiaTerritory\Data;
 
 use CaturSeptian\IndonesiaTerritory\Enums\Level;
 use CaturSeptian\IndonesiaTerritory\Install\InstallationException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -79,7 +81,9 @@ final class BoundaryDownloader
             $source = rtrim($url, '/')."/api/v1/export/boundaries/{$file['path']}";
 
             try {
-                $body = Http::timeout(600)->retry(3, $this->retrySleepMs)->get($source)->throw()->body();
+                $body = Http::timeout(600)
+                    ->retry(3, $this->retrySleepMs, fn (Throwable $e) => self::transient($e))
+                    ->get($source)->throw()->body();
             } catch (Throwable $e) {
                 $errors[] = "{$source}: {$e->getMessage()}";
 
@@ -87,7 +91,10 @@ final class BoundaryDownloader
             }
 
             if (hash('sha256', $body) !== $file['sha256']) {
-                throw new InstallationException("Checksum {$file['path']} dari {$source} tidak cocok dengan manifest package. Data di sumber mungkin sudah diperbarui; perbarui package dengan composer update caturseptian/laravel-indonesia-territory.");
+                $errors[] = "{$source}: checksum tidak cocok dengan manifest package.";
+                $mismatch = true;
+
+                continue;
             }
 
             file_put_contents("{$destination}.tmp", gzencode($body, 6));
@@ -96,6 +103,19 @@ final class BoundaryDownloader
             return;
         }
 
+        if (isset($mismatch)) {
+            throw new InstallationException("Checksum {$file['path']} tidak cocok dengan manifest package di semua sumber:\n".implode("\n", $errors)."\nData di sumber mungkin sudah diperbarui; perbarui package dengan composer update caturseptian/laravel-indonesia-territory.");
+        }
+
         throw new InstallationException("Gagal mengunduh boundary {$file['path']}:\n".implode("\n", $errors)."\nJalankan ulang php artisan territory:boundaries untuk melanjutkan.");
+    }
+
+    /**
+     * Hanya gangguan sementara yang diulang: koneksi gagal atau galat server (5xx, 429).
+     */
+    private static function transient(Throwable $e): bool
+    {
+        return $e instanceof ConnectionException
+            || ($e instanceof RequestException && ($e->response->serverError() || $e->response->status() === 429));
     }
 }
