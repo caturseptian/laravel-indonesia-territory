@@ -81,6 +81,16 @@ Without options, `-n` installs down to villages with postal codes and coordinate
 | Production needs | `php artisan migrate --seed` (no internet, no package) | the package |
 | Data updates | run `territory:install --force` again during development | `composer update`, then `php artisan territory:seed --fresh` |
 
+After ejecting, call the seeder from `database/seeders/DatabaseSeeder.php` so that `migrate --seed` fills the
+territory tables in production:
+
+```php
+$this->call(TerritorySeeder::class);
+```
+
+`Territory` (code helpers) and the `TerritoryCode` rule are part of the package and are **not** ejected. If you
+remove the package, validate with Laravel's own rules instead, e.g. `Rule::exists('territory_villages', 'code')`.
+
 After ejecting with `--api`, register the copied routes in `bootstrap/app.php`:
 
 ```php
@@ -172,12 +182,38 @@ If a download is interrupted, continue it with:
 php artisan territory:boundaries
 ```
 
+In dependent mode the files are stored in `storage/app/territory/boundaries`, which Laravel does not commit.
+Run `php artisan territory:boundaries` on deploy, or point `boundary_path` in `config/territory.php` to a
+committed directory. `territory:seed` warns when boundaries are configured but no files are found. In eject mode
+the files go to `database/data/territory/boundaries` and are committed with the app.
+
+Seeding reads the GeoJSON one feature per line, so even the largest province files (about 23 MB) fit in the
+default PHP memory limit.
+
 ## Updating the data
 
 A new Kemendagri decree is released as a new minor version of the package. In dependent mode, run
 `composer update caturseptian/laravel-indonesia-territory` and then `php artisan territory:seed --fresh`.
 In eject mode, require the new version during development, run `territory:install --force` with the same options
 and commit the result.
+
+`territory:seed --fresh` updates rows by code instead of emptying the tables, so your own tables that reference
+territory codes with a foreign key keep their rows. Codes that no longer exist in the new data (for example after
+a region is split or merged) are deleted; if your tables still reference them, the foreign key decides what
+happens, so check those references before updating.
+
+## Changing your choices
+
+Run `territory:install --force` with the new options. The migration keeps its file name, so `migrate` does not try
+to create the tables twice. With `--migrate` the installer rebuilds the territory tables right away; otherwise it
+prints the command to do it:
+
+```bash
+php artisan migrate:refresh --path=database/migrations/xxxx_xx_xx_xxxxxx_create_territory_tables.php
+```
+
+This drops and recreates only the territory tables. Tables of your own that reference them with a foreign key
+have to be handled first.
 
 ## Data sources
 
@@ -206,7 +242,8 @@ Pasang dengan `composer require caturseptian/laravel-indonesia-territory --dev`,
 yang diperlukan, lalu membuat migration yang hanya berisi tabel dan kolom yang dipilih.
 
 Ada dua mode. **Eject** menyalin model, migration, seeder, dan data ke aplikasi, sehingga package bisa dihapus dan
-production cukup menjalankan `php artisan migrate --seed` tanpa internet. **Dependent** membiarkan package tetap
+production cukup menjalankan `php artisan migrate --seed` tanpa internet (panggil `TerritorySeeder` dari
+`DatabaseSeeder`). **Dependent** membiarkan package tetap
 terpasang, dan data diperbarui lewat `composer update` lalu `php artisan territory:seed --fresh`.
 
 Kode wilayah selalu berupa string dengan titik dan angka nol di depan, misalnya `31.71.01.1001`.
