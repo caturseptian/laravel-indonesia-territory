@@ -116,4 +116,17 @@ class MigrationWriterTest extends TestCase
         $this->assertFalse(Schema::hasTable('territory_villages'));
         $this->assertFalse(Schema::hasTable('territory_boundaries'));
     }
+
+    public function test_down_menghapus_tabel_dengan_prefix_lama(): void
+    {
+        $writer = new MigrationWriter;
+        $directory = $this->workspace.'/database/migrations';
+        (require $writer->write(new InstallOptions(Level::Regency, [InstallOptions::CHANGES]), $directory))->up();
+
+        (require $writer->write(new InstallOptions(Level::Province, prefix: 'wil_'), $directory, force: true))->down();
+
+        $this->assertFalse(Schema::hasTable('territory_provinces'));
+        $this->assertFalse(Schema::hasTable('territory_regencies'));
+        $this->assertFalse(Schema::hasTable('territory_code_changes'));
+    }
 }
