@@ -90,16 +90,51 @@ function hashRemote(string $url): array
         exit(1);
     }
 
+    $length = null;
+    foreach (stream_get_meta_data($handle)['wrapper_data'] ?? [] as $header) {
+        if (preg_match('/^content-length:\s*(\d+)/i', (string) $header, $match) === 1) {
+            $length = (int) $match[1];
+        }
+    }
+
     $hash = hash_init('sha256');
     $bytes = 0;
     while (! feof($handle)) {
         $chunk = fread($handle, 1 << 20);
+        if ($chunk === false) {
+            break;
+        }
         hash_update($hash, $chunk);
         $bytes += strlen($chunk);
     }
     fclose($handle);
 
-    return [$bytes, hash_final($hash)];
+    return [$bytes, hash_final($hash), $length];
+}
+
+/**
+ * Ukuran dan sha256 yang terbukti utuh: cocok dengan Content-Length, atau sama pada dua kali unduh.
+ *
+ * @return array{int, string}
+ */
+function verifiedHash(string $url): array
+{
+    for ($attempt = 1; $attempt <= 3; $attempt++) {
+        [$bytes, $sha256, $length] = hashRemote($url);
+        if ($length !== null && $bytes === $length) {
+            return [$bytes, $sha256];
+        }
+        if ($length === null) {
+            [$again, $sha256Again] = hashRemote($url);
+            if ($again === $bytes && $sha256Again === $sha256) {
+                return [$bytes, $sha256];
+            }
+        }
+        fwrite(STDERR, "Unduhan {$url} tidak utuh ({$bytes} byte), mencoba lagi.\n");
+    }
+
+    fwrite(STDERR, "Gagal mendapatkan {$url} secara utuh.\n");
+    exit(1);
 }
 
 $meta = fetchJson("{$api}/meta.json");
@@ -151,7 +186,7 @@ foreach ($provinces as $province) {
 }
 foreach ($boundaries as $i => $boundary) {
     fwrite(STDOUT, "boundary {$boundary['path']}\n");
-    [$bytes, $sha256] = hashRemote("{$api}/export/boundaries/{$boundary['path']}");
+    [$bytes, $sha256] = verifiedHash("{$api}/export/boundaries/{$boundary['path']}");
     $boundaries[$i] += ['bytes' => $bytes, 'sha256' => $sha256];
 }
 
