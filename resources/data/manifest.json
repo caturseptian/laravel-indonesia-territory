@@ -438,8 +438,8 @@
             "path": "villages-74.geojson",
             "level": "village",
             "province": "74",
-            "bytes": 2254400,
-            "sha256": "3199fa0f8ccbd12e951071fc5bb5d80c0ae0920cd02b94525fc3506dc9948225"
+            "bytes": 6395665,
+            "sha256": "7f2a2ba3d29c7cca31eb67c037c545ccbfaf695f3593ad979f1f29b8635bde4b"
         },
         {
             "path": "districts-75.geojson",
