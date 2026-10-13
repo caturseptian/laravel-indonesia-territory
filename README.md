@@ -4,7 +4,7 @@
 [![Packagist Version](https://img.shields.io/packagist/v/caturseptian/laravel-indonesia-territory)](https://packagist.org/packages/caturseptian/laravel-indonesia-territory)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/caturseptian/laravel-indonesia-territory)](https://packagist.org/packages/caturseptian/laravel-indonesia-territory)
 ![PHP](https://img.shields.io/badge/PHP-8.2%20to%208.5-777bb4)
-![Laravel](https://img.shields.io/badge/Laravel-11%20|%2012%20|%2013-ff2d20)
+![Laravel](https://img.shields.io/badge/Laravel-12%20|%2013-ff2d20)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/caturseptian)
 [![Trakteer](https://img.shields.io/badge/Trakteer-dukung-c0392b)](https://trakteer.id/caturseptian)
