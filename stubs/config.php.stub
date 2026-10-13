@@ -1,0 +1,28 @@
+<?php
+
+// Ditulis oleh `php artisan territory:install`. Untuk mengubah pilihan, jalankan installer lagi dengan --force
+// supaya migration ikut menyesuaikan.
+return [
+    'mode' => {{mode}},
+    'prefix' => {{prefix}},
+    'level' => {{level}},
+    'extras' => {{extras}},
+    'boundaries' => [
+        'levels' => {{boundary_levels}},
+        'provinces' => {{boundary_provinces}},
+    ],
+    'dataset_version' => {{dataset_version}},
+    'data_path' => {{data_path}},
+    'boundary_path' => {{boundary_path}},
+    'source' => [
+        'urls' => [
+            'https://indonesia-region.caturseptian.site',
+            'https://indonesia-region-api.caturseptian-dev.workers.dev',
+        ],
+    ],
+    'api' => [
+        'enabled' => {{api}},
+        'prefix' => 'api/territory',
+        'middleware' => ['api', 'throttle:60,1'],
+    ],
+];
