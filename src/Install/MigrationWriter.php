@@ -124,7 +124,7 @@ final class MigrationWriter
                 "\$table->index('name');",
             ],
             'code_changes' => [
-                "\$table->id();",
+                '$table->id();',
                 "\$table->string('from_document', 64);",
                 "\$table->string('to_document', 64);",
                 "\$table->string('level', 8);",
