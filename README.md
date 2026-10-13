@@ -84,6 +84,8 @@ Without options, `-n` installs down to villages with postal codes and coordinate
 After ejecting with `--api`, register the copied routes in `bootstrap/app.php`:
 
 ```php
+use Illuminate\Support\Facades\Route;
+
 ->withRouting(
     // ...
     then: fn () => Route::middleware(['api', 'throttle:60,1'])
