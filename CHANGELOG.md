@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1 - 2026-10-13
+
+- Install ulang dengan prefix tabel berbeda kini ikut menghapus tabel dengan prefix lama.
+- `territory:install --force --migrate` hanya membangun ulang migration wilayah, tanpa menyentuh migration aplikasi dan tanpa pesan "Migration not found".
+- Tanpa `--migrate`, installer menyarankan menjalankan ulang dengan `--migrate`.
+
 ## 1.0.0 - 2026-10-13
 
 - Repo berubah dari aplikasi Laravel menjadi package `caturseptian/laravel-indonesia-territory`. Versi aplikasi tersimpan di tag `app-final`.
