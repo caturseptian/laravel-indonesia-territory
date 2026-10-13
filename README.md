@@ -41,6 +41,8 @@ curl https://indonesia-region.caturseptian.site/api/v1/provinces.json
 curl https://indonesia-region.caturseptian.site/api/v1/districts/31.71.01/villages.json
 ```
 
+Alamat cadangan jika domain utama tidak dapat diakses: `https://indonesia-region-api.caturseptian-dev.workers.dev` (path API sama).
+
 Selain data di repositori ini, situs tersebut juga menyediakan koordinat, poligon batas wilayah, data pulau
 dan riwayat perubahan kode sejak 2017.
 
