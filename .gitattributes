@@ -1,11 +1,16 @@
 * text=auto eol=lf
+*.gz binary
 
-*.blade.php diff=html
-*.css diff=css
-*.html diff=html
 *.md diff=markdown
 *.php diff=php
 
 /.github export-ignore
-CHANGELOG.md export-ignore
-.styleci.yml export-ignore
+/bin export-ignore
+/docs export-ignore
+/tests export-ignore
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/phpunit.xml export-ignore
+/phpstan.neon.dist export-ignore
+/pint.json export-ignore
