@@ -2,8 +2,12 @@
 
 namespace CaturSeptian\IndonesiaTerritory\Http\Resources;
 
+use CaturSeptian\IndonesiaTerritory\Models\Village;
 use Illuminate\Http\Request;
 
+/**
+ * @mixin Village
+ */
 class VillageResource extends TerritoryResource
 {
     /**

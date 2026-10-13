@@ -2,8 +2,12 @@
 
 namespace CaturSeptian\IndonesiaTerritory\Http\Resources;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property Model $resource
+ */
 abstract class TerritoryResource extends JsonResource
 {
     /**
@@ -17,11 +21,6 @@ abstract class TerritoryResource extends JsonResource
             return [];
         }
 
-        return [
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'spatial_status' => $this->spatial_status,
-            'bbox' => $this->bbox,
-        ];
+        return $this->resource->only(['latitude', 'longitude', 'spatial_status', 'bbox']);
     }
 }
