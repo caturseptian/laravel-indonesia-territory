@@ -65,6 +65,7 @@ class InstallOptionsTest extends TestCase
             'kode provinsi tidak valid' => [['boundaries' => 'village', 'boundary_provinces' => '3x'], 'Kode provinsi tidak valid: 3x'],
             'mode tidak dikenal' => [['mode' => 'hybrid'], 'Mode tidak dikenal'],
             'prefix tidak aman' => [['prefix' => 'wil-ayah'], 'Prefix tabel'],
+            'prefix dengan newline' => [['prefix' => "territory_\n"], 'Prefix tabel'],
         ];
     }
 

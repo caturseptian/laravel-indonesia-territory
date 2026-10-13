@@ -63,10 +63,10 @@ enum Level: string
     public function pattern(): string
     {
         return match ($this) {
-            self::Province => '/^(?!00)\d{2}$/',
-            self::Regency => '/^\d{2}\.(0[1-9]|[1-6]\d|7[1-9]|[89]\d)$/',
-            self::District => '/^\d{2}\.\d{2}\.(?!00)\d{2}$/',
-            self::Village => '/^\d{2}\.\d{2}\.\d{2}\.[123](?!000)\d{3}$/',
+            self::Province => '/^(?!00)\d{2}$/D',
+            self::Regency => '/^\d{2}\.(0[1-9]|[1-6]\d|7[1-9]|[89]\d)$/D',
+            self::District => '/^\d{2}\.\d{2}\.(?!00)\d{2}$/D',
+            self::Village => '/^\d{2}\.\d{2}\.\d{2}\.[123](?!000)\d{3}$/D',
         };
     }
 

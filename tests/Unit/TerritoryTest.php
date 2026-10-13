@@ -44,6 +44,7 @@ class TerritoryTest extends TestCase
             'desa 4xxx' => ['31.71.01.4001'],
             'desa x000' => ['31.71.01.1000'],
             'terlalu panjang' => ['31.71.01.1001.1'],
+            'newline di akhir' => ["31.71\n"],
         ];
     }
 

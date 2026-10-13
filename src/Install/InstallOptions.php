@@ -133,7 +133,7 @@ final class InstallOptions
         if (! in_array($this->mode, [self::DEPENDENT, self::EJECT], true)) {
             $errors[] = "Mode tidak dikenal: {$this->mode}. Pilihan: dependent, eject.";
         }
-        if (preg_match('/^[a-z0-9_]*$/', $this->prefix) !== 1) {
+        if (preg_match('/^[a-z0-9_]*$/D', $this->prefix) !== 1) {
             $errors[] = 'Prefix tabel hanya boleh huruf kecil, angka, dan garis bawah.';
         }
 
