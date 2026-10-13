@@ -1,0 +1,33 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Memeriksa ulang setiap berkas boundary di manifest terhadap sumber publiknya.
+ *
+ *   php bin/verify-data
+ *
+ * Dijalankan sebelum rilis: setiap berkas diunduh dari URL utama dan URL cadangan, ukuran dan sha256-nya
+ * harus sama dengan manifest.
+ */
+
+declare(strict_types=1);
+
+$urls = ['https://indonesia-region.caturseptian.site', 'https://indonesia-region-api.caturseptian-dev.workers.dev'];
+$manifest = json_decode(file_get_contents(dirname(__DIR__).'/resources/data/manifest.json'), true, flags: JSON_THROW_ON_ERROR);
+$context = stream_context_create(['http' => ['timeout' => 600, 'header' => "Accept-Encoding: identity\r\nUser-Agent: laravel-indonesia-territory verify-data\r\n"]]);
+
+$failures = 0;
+foreach ($manifest['boundaries'] as $file) {
+    foreach ($urls as $url) {
+        $body = @file_get_contents("{$url}/api/v1/export/boundaries/{$file['path']}", false, $context);
+        $ok = $body !== false && strlen($body) === $file['bytes'] && hash('sha256', $body) === $file['sha256'];
+        if (! $ok) {
+            $failures++;
+            fwrite(STDERR, sprintf("TIDAK COCOK %s dari %s (%s byte)\n", $file['path'], $url, $body === false ? 'gagal' : strlen($body)));
+        }
+    }
+    fwrite(STDOUT, "ok {$file['path']}\n");
+}
+
+fwrite(STDOUT, $failures === 0 ? "Semua berkas boundary cocok dengan manifest.\n" : "{$failures} berkas tidak cocok.\n");
+exit($failures === 0 ? 0 : 1);
