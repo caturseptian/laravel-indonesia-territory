@@ -80,10 +80,27 @@ class MigrationWriterTest extends TestCase
     {
         $writer = new MigrationWriter;
         $directory = $this->workspace.'/database/migrations';
-        $writer->write(new InstallOptions(Level::Province), $directory);
-        $writer->write(new InstallOptions(Level::Regency), $directory, force: true);
+        $first = $writer->write(new InstallOptions(Level::Province), $directory);
+        sleep(1);
+        $second = $writer->write(new InstallOptions(Level::Regency), $directory, force: true);
 
+        // Nama berkas tetap sama supaya migration yang sudah tercatat tidak dijalankan dua kali.
+        $this->assertSame($first, $second);
         $this->assertCount(1, glob($directory.'/*'.MigrationWriter::SUFFIX));
+        $this->assertStringContainsString("'territory_regencies'", file_get_contents($second));
+    }
+
+    public function test_down_menghapus_tabel_dari_pilihan_sebelumnya(): void
+    {
+        $writer = new MigrationWriter;
+        $directory = $this->workspace.'/database/migrations';
+        (require $writer->write(new InstallOptions(Level::Village, InstallOptions::EXTRAS, [Level::Province]), $directory))->up();
+
+        (require $writer->write(new InstallOptions(Level::Province), $directory, force: true))->down();
+
+        $this->assertFalse(Schema::hasTable('territory_villages'));
+        $this->assertFalse(Schema::hasTable('territory_islands'));
+        $this->assertFalse(Schema::hasTable('territory_boundaries'));
     }
 
     public function test_down_menghapus_semua_tabel(): void

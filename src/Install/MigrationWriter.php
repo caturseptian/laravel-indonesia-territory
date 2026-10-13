@@ -13,6 +13,8 @@ final class MigrationWriter
 {
     public const SUFFIX = '_create_territory_tables.php';
 
+    private const TABLES = ['provinces', 'regencies', 'districts', 'villages', 'islands', 'code_changes', 'boundaries'];
+
     public function write(InstallOptions $options, string $directory, bool $force = false): string
     {
         $existing = glob($directory.'/*'.self::SUFFIX) ?: [];
@@ -20,10 +22,11 @@ final class MigrationWriter
             throw new InstallationException('Migration wilayah sudah ada: '.basename($existing[0]).'. Jalankan ulang dengan --force untuk membuatnya ulang.');
         }
 
-        array_map(unlink(...), $existing);
+        // Pakai ulang nama berkas lama: migration yang sudah tercatat di tabel migrations tidak boleh
+        // muncul lagi dengan nama baru, karena migrate akan mencoba membuat tabel yang sudah ada.
+        $path = $existing[0] ?? $directory.'/'.date('Y_m_d_His').self::SUFFIX;
+        array_map(unlink(...), array_slice($existing, 1));
         File::ensureDirectoryExists($directory);
-
-        $path = $directory.'/'.date('Y_m_d_His').self::SUFFIX;
         file_put_contents($path, $this->render($options));
 
         return $path;
@@ -32,13 +35,15 @@ final class MigrationWriter
     public function render(InstallOptions $options): string
     {
         $up = [];
-        $down = [];
         foreach ($options->tables() as $table) {
             $name = $options->prefix.$table;
             $columns = array_map(fn (string $line) => '            '.$line, $this->columns($table, $options));
             $up[] = "        Schema::create('{$name}', function (Blueprint \$table) {\n".implode("\n", $columns)."\n        });";
-            array_unshift($down, "        Schema::dropIfExists('{$name}');");
         }
+
+        // down() menghapus semua tabel wilayah, termasuk yang dibuat oleh pilihan sebelumnya,
+        // supaya migrate:refresh tetap bersih setelah install ulang dengan pilihan berbeda.
+        $down = array_map(fn (string $table) => "        Schema::dropIfExists('{$options->prefix}{$table}');", array_reverse(self::TABLES));
 
         return implode("\n", [
             '<?php',
