@@ -3,6 +3,8 @@
 namespace CaturSeptian\IndonesiaTerritory\Tests;
 
 use CaturSeptian\IndonesiaTerritory\IndonesiaTerritoryServiceProvider;
+use CaturSeptian\IndonesiaTerritory\Install\InstallOptions;
+use CaturSeptian\IndonesiaTerritory\Install\MigrationWriter;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -32,6 +34,16 @@ abstract class TestCase extends Orchestra
         File::deleteDirectory($this->workspace);
 
         parent::tearDown();
+    }
+
+    /**
+     * Bangkitkan migration sesuai pilihan lalu jalankan.
+     */
+    protected function migrate(InstallOptions $options): void
+    {
+        $path = (new MigrationWriter)->write($options, $this->workspace.'/database/migrations', force: true);
+
+        (require $path)->up();
     }
 
     protected function getPackageProviders($app): array
