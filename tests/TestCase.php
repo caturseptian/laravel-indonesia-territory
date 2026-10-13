@@ -46,6 +46,11 @@ abstract class TestCase extends Orchestra
         (require $path)->up();
     }
 
+    protected function useFixtureData(): void
+    {
+        config(['territory.data_path' => Fixtures::data()]);
+    }
+
     protected function getPackageProviders($app): array
     {
         return [IndonesiaTerritoryServiceProvider::class];
