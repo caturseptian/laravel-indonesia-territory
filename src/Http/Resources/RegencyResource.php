@@ -2,8 +2,12 @@
 
 namespace CaturSeptian\IndonesiaTerritory\Http\Resources;
 
+use CaturSeptian\IndonesiaTerritory\Models\Regency;
 use Illuminate\Http\Request;
 
+/**
+ * @mixin Regency
+ */
 class RegencyResource extends TerritoryResource
 {
     /**
